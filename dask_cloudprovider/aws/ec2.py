@@ -55,6 +55,7 @@ class EC2Instance(VMInterface):
         instance_tags: None,
         volume_tags: None,
         use_private_ip: False,
+        connect_to_private_ip: False,
         enable_detailed_monitoring=None,
         **kwargs,
     ):
@@ -80,6 +81,7 @@ class EC2Instance(VMInterface):
         self.instance_tags = instance_tags
         self.volume_tags = volume_tags
         self.use_private_ip = use_private_ip
+        self.connect_to_private_ip = connect_to_private_ip
         self.enable_detailed_monitoring = enable_detailed_monitoring
 
     async def create_vm(self):
@@ -197,7 +199,7 @@ class EC2Instance(VMInterface):
             f"Created instance {self.instance['InstanceId']} as {self.name}"
         )
 
-        address_type = "Private" if self.use_private_ip else "Public"
+        address_type = "Private" if self.use_private_ip or self.connect_to_private_ip else "Public"
         ip_address_key = f"{address_type}IpAddress"
 
         default_error = (
@@ -485,6 +487,7 @@ class EC2Cluster(VMCluster):
         instance_tags=None,
         volume_tags=None,
         use_private_ip=None,
+        connect_to_private_ip=None,
         enable_detailed_monitoring=None,
         **kwargs,
     ):
@@ -569,6 +572,12 @@ class EC2Cluster(VMCluster):
             else self.config.get("use_private_ip")
         )
 
+        self._connect_to_private_ip = (
+            connect_to_private_ip
+            if connect_to_private_ip is not None
+            else self.config.get("connect_to_private_ip")
+        )
+
         self.enable_detailed_monitoring = (
             enable_detailed_monitoring
             if enable_detailed_monitoring is not None
@@ -596,6 +605,7 @@ class EC2Cluster(VMCluster):
             "instance_tags": self.instance_tags,
             "volume_tags": self.volume_tags,
             "use_private_ip": self._use_private_ip,
+            "connect_to_private_ip": self._connect_to_private_ip,
             "enable_detailed_monitoring": self.enable_detailed_monitoring,
         }
         self.scheduler_options = {**self.options}
